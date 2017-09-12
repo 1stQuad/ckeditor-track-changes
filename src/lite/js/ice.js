@@ -1651,9 +1651,11 @@
 				if (!nextContainer.isContentEditable) {
 					returnValue = this._addDeleteTracking(nextContainer, {range:null, moveLeft:false, merge: true});
 					var emptySpaceNode = this.env.document.createTextNode('');
-					nextContainer.parentNode.insertBefore(emptySpaceNode, nextContainer.nextSibling);
-					range.selectNode(emptySpaceNode);
-					range.collapse(true);
+					if(nextContainer.parentNode){
+						nextContainer.parentNode.insertBefore(emptySpaceNode, nextContainer.nextSibling);
+						range.selectNode(emptySpaceNode);
+						range.collapse(true);
+					}
 					return returnValue;
 				}
 		
@@ -2239,6 +2241,9 @@
 				preventDefault = false,
 				self = this,
 				range = self.getCurrentRange();
+			if (!range) {
+				return preventDefault;
+			}
 			switch (key) {
 				case ice.dom.DOM_VK_DELETE:
 					preventDefault = this._deleteContents();
