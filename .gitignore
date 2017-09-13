@@ -8,3 +8,4 @@ docsapi/extjs
 docsapi/resources
 test/sricss
 webpack-cache
+/build/local.properties
