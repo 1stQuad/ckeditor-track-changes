@@ -365,6 +365,7 @@
 	
 		visible: function(el) {
 			if(el.nodeType === ice.dom.TEXT_NODE) el = el.parentNode;
+			if (!(el && el.getBoundingClientRect)) return false;
 			var rect = el.getBoundingClientRect();
 			return ( rect.top > 0 && rect.left > 0);
 		},
@@ -1576,7 +1577,7 @@
 				return true;
 			}
 			
-			if (commonAncestor.nodeType !== ice.dom.TEXT_NODE) {
+			if (commonAncestor.nodeType !== ice.dom.TEXT_NODE && commonAncestor.nodeName != "IMG") {
 				// If placed at the beginning of a container that cannot contain text, such as an ul element, place the caret at the beginning of the first item.
 				if (initialOffset === 0 && ice.dom.isBlockElement(commonAncestor) && (!ice.dom.canContainTextElement(commonAncestor))) {
 					var firstItem = commonAncestor.firstElementChild;
@@ -1625,7 +1626,7 @@
 			catch (ignore){}
 	
 			// Handle cases of the caret is at the end of a container or placed directly in a block element
-			if (initialOffset === initialContainer.data.length && (!ice.dom.hasNoTextOrStubContent(initialContainer))) {
+			if (initialContainer.data && initialOffset === initialContainer.data.length && (!ice.dom.hasNoTextOrStubContent(initialContainer))) {
 				nextContainer = ice.dom.getNextNode(initialContainer, this.element);
 		
 				// If the next container is outside of ICE then do nothing.
@@ -1635,8 +1636,10 @@
 					return false;
 				}
 		
+				var nextNextContainer = ice.dom.getNextNode(nextContainer, this.element);
+				var isEndOfP = nextNextContainer && nextNextContainer.parentNode && nextNextContainer.parentNode.nodeName == "P" && nextNextContainer.parentNode != nextContainer.parentNode;
 				// If the next container is <br> element find the next node
-				if (isBRNode(nextContainer)) {
+				if (isBRNode(nextContainer) && !isEndOfP) {
 					this._addDeleteTrackingToBreak(nextContainer, { range: range }); 
 					return true;
 //					nextContainer = ice.dom.getNextNode(nextContainer, this.element);
@@ -1648,7 +1651,7 @@
 				}
 		
 				// If the next container is non-editable, enclose it with a delete ice node and add an empty text node after it to position the caret.
-				if (!nextContainer.isContentEditable) {
+				if (!nextContainer.isContentEditable || nextContainer.node == "IMG") {
 					returnValue = this._addDeleteTracking(nextContainer, {range:null, moveLeft:false, merge: true});
 					var emptySpaceNode = this.env.document.createTextNode('');
 					if(nextContainer.parentNode){
@@ -1809,7 +1812,7 @@
 				// If the previous container is a stub element between blocks
 				// then just delete and leave the range/cursor in place.
 				if (ice.dom.isStubElement(prevContainer)) {
-					ice.dom.remove(prevContainer);
+					this._removeNode(prevContainer);
 					range.collapse(true);
 					return false;
 				}
@@ -1830,6 +1833,12 @@
 		
 					if (lastSelectable && !ice.dom.isOnBlockBoundary(range.startContainer, lastSelectable, this.element)) {
 						range.selectNodeContents(lastSelectable);
+						range.collapse();
+						return true;
+					}
+
+					if (!lastSelectable && prevContainer.nodeName == 'P' && prevBlockIsEmpty) {
+						this._removeNode(prevContainer);
 						range.collapse();
 						return true;
 					}
@@ -1948,7 +1957,7 @@
 				ctNode = nextDelNode;
 				ctNode.insertBefore(contentNode, ctNode.firstChild);
 			} 
-			else { // not in the neighborhood of a delete node
+			else if (contentNode.parentNode) { // not in the neighborhood of a delete node
 				var changeId = this.getAdjacentChangeId(contentNode, moveLeft);
 				ctNode = this._createIceNode(DELETE_TYPE, null, changeId);
 				if (options.deleteNodesCollection) {
@@ -2270,7 +2279,7 @@
 								range.collapse(false);
 							}
 							// if Previous sibling doesn't exist, get out of the hidden zone by moving to the right
-							else {
+							else if (range.startContainer.parentNode.nextSibling) {
 								range.setEnd(range.startContainer.parentNode.nextSibling, 0);
 								range.collapse(false);
 							}

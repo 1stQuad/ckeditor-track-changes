@@ -1433,6 +1433,10 @@ Written by (David *)Frenkiel - https://github.com/imdfl
 				toInsert = toInsert.filter(function(e) {
 					return ! elementMatchesSelectors($(e), selectors);
 				});
+				//1stQuad: is not compatible with widgets, so remove all widgets that we've found
+				for (var i = 0; i < toInsert.length; i++) {
+					$(toInsert[i]).find("[data-widget]").removeAttr("data-widget");
+				}
 			}
 			if (toInsert && toInsert.length) {
 				toInsert = cleanClipboard(toInsert);

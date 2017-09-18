@@ -2307,6 +2307,9 @@
 
                     createBeforeAfterNodeSetter = function(name) {
                         return function(node) {
+                            if (!node.parentNode) {
+                                return;							
+                            }
                             this.nativeRange[name](node);
                             updateRangeProperties(this);
                         };
@@ -2335,7 +2338,10 @@
                     };
 
                     createBeforeAfterNodeSetter = function(name, oppositeName) {
-                        return function(node) {
+                        return function(node) {                            
+                            if (!node.parentNode) {
+                                return;							
+                            }
                             try {
                                 this.nativeRange[name](node);
                             } catch (ex) {
