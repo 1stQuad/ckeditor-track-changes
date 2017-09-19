@@ -20,6 +20,7 @@
   },
   "dependencies": {
     "webpack": "^2",
+    "webpack-merge-and-include-globally": "^1.0.0",
     "webpack-uglify-js-plugin": "^1.1"
   }
 }

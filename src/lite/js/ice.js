@@ -364,8 +364,11 @@
 		},
 	
 		visible: function(el) {
+			//1stQuad check
+			if(!el) return false;
 			if(el.nodeType === ice.dom.TEXT_NODE) el = el.parentNode;
-			if (!(el && el.getBoundingClientRect)) return false;
+			//1stQuad check
+			if(!(el && el.getBoundingClientRect)) return false;
 			var rect = el.getBoundingClientRect();
 			return ( rect.top > 0 && rect.left > 0);
 		},
@@ -487,7 +490,8 @@
 						if(browser["type"] === "mozilla"){
 							prevent = this._deleteRight(range);
 							// Handling track change show/hide
-							if(!this.visible(range.endContainer)){
+							//1stQuad check
+							if(!this.visible(range.endContainer) && range.endContainer.parentNode){
 								if(range.endContainer.parentNode.nextSibling){
 			//						range.setEnd(range.endContainer.parentNode.nextSibling, 0);
 									range.setEndBefore(range.endContainer.parentNode.nextSibling);
@@ -1552,22 +1556,34 @@
 	
 		/**
 		 * Deletes to the right (delete key)
+		 * 1stQuad: added depth to check stack overflow in some cases
 		 * @private
 		 */
-		_deleteRight: function (range) {
+		_deleteRight: function (range, depth) {
 	
 			var parentBlock = ice.dom.isBlockElement(range.startContainer) && range.startContainer || ice.dom.getBlockParent(range.startContainer, this.element) || null,
-				isEmptyBlock = parentBlock ? (ice.dom.hasNoTextOrStubContent(parentBlock)) : false,
+				isEmptyBlock = parentBlock ? (ice.dom.hasNoTextOrStubContent(parentBlock)) : true, //1stQuad: changed to true
 				nextBlock = parentBlock && ice.dom.getNextContentNode(parentBlock, this.element),
-				nextBlockIsEmpty = nextBlock ? (ice.dom.hasNoTextOrStubContent(nextBlock)) : false,
+				nextBlockIsEmpty = nextBlock ? (ice.dom.hasNoTextOrStubContent(nextBlock)) : true, //1stQuad: changed to true
 				initialContainer = range.endContainer,
 				initialOffset = range.endOffset, i,
 				commonAncestor = range.commonAncestorContainer,
 				nextContainer, returnValue = false;
+				
+			depth = depth || 0;
 	
-	
-			// If the current block is empty then let the browser handle the delete/event.
+			// If the current block is empty then let the browser handle the delete/event. If this is paragraph and there's no next element - we are in the end. Stop.
 			if (isEmptyBlock) {
+				return false;
+			}
+			
+			//1stQuad check
+			if ((parentBlock && ice.dom.isBlockElement(parentBlock) && nextBlockIsEmpty && !range.endContainer)){
+				return true;
+			}
+			
+			//1stQuad check
+			if (depth > 100) {
 				return false;
 			}
 	
@@ -1584,7 +1600,7 @@
 					if (firstItem) {
 						range.setStart(firstItem, 0);
 						range.collapse();
-						return this._deleteRight(range);
+						return this._deleteRight(range, depth + 1);
 					}
 				}
 		
@@ -1596,7 +1612,7 @@
 					}
 					range.setStart(commonAncestor.childNodes[initialOffset], 0);
 					range.collapse(true);
-					returnValue = this._deleteRight(range);
+					returnValue = this._deleteRight(range, depth + 1);
 					range.refresh();
 					return returnValue;
 				}
@@ -1611,7 +1627,7 @@
 						range.setEnd(nextContainer, 0);
 					}
 					range.collapse();
-					return this._deleteRight(range);
+					return this._deleteRight(range, depth + 1);
 				}
 			}
 	
@@ -1963,8 +1979,11 @@
 				if (options.deleteNodesCollection) {
 					options.deleteNodesCollection.push(ctNode);
 				}
-				contentNode.parentNode.insertBefore(ctNode, contentNode);
-				ctNode.appendChild(contentNode);
+				//1stQuad check
+				if (contentNode.parentNode) {
+					contentNode.parentNode.insertBefore(ctNode, contentNode);
+					ctNode.appendChild(contentNode);
+				}
 			}
 			if (range) {
 				if (ice.dom.isStubElement(contentNode)) {
@@ -2160,7 +2179,10 @@
 						var splitNode = this._splitNode(contentAddNode, parent, cInd);
 						this._deleteEmptyNode(splitNode);
 					}
-					contentAddNode.parentNode.insertBefore(ctNode, contentAddNode);
+					//1stQuad check
+					if (contentAddNode.parentNode){
+						contentAddNode.parentNode.insertBefore(ctNode, contentAddNode);
+					}
 				}
 				this._deleteEmptyNode(contentAddNode);
 
