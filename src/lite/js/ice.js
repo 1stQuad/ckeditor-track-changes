@@ -533,34 +533,43 @@
 					}
 					else {
 						// LEFT DELETE
+						var prev;
 						if(browser.mozilla){
 							prevent = this._deleteLeft(range);
 							// Handling track change show/hide
 							if(!this.visible(range.startContainer)){
-								if(range.startContainer.parentNode.previousSibling){
-									range.setEnd(range.startContainer.parentNode.previousSibling, 0);
-								} else {
-									range.setEnd(range.startContainer.parentNode, 0);
+								prev = (range.startContainer.nodeType === ice.dom.TEXT_NODE) ? range.startContainer.parentNode.previousSibling : range.startContainer.previousSibling;
+								if ($(prev).is(this._deleteSelector)) {
+									while(prev){
+										if ($(prev).is(this._deleteSelector)) {
+											prev = prev.previousSibling;
+											continue;
+										}
+										break;
+									}
 								}
-								range.moveEnd(ice.dom.CHARACTER_UNIT, ice.dom.getNodeCharacterLength(range.endContainer));
-								range.collapse(false);
+								if (prev){
+									range.setEnd(prev, 0);
+									range.moveEnd(ice.dom.CHARACTER_UNIT, ice.dom.getNodeCharacterLength(range.endContainer));
+									range.collapse(false);
+								}
 							}
 						}
 						else {
 							if(!this.visible(range.startContainer)){
-								if(range.endOffset === ice.dom.getNodeCharacterLength(range.endContainer)){
-									var prev = range.startContainer.previousSibling;
-									if ($(prev).is(this._deleteSelector)) {
-										while(prev){
-											if ($(prev).is(this._deleteSelector)) {
-												prev = prev.prevSibling;
-												continue;
-											}
-											range.setEndBefore(prev.nextSibling, 0);
-											range.collapse(false);
-											break;
+								prev = range.startContainer.previousSibling || (range.startContainer.parentNode)? range.startContainer.parentNode.previousSibling : null;
+								if ($(prev).is(this._deleteSelector)) {
+									while(prev){
+										if ($(prev).is(this._deleteSelector)) {
+											prev = prev.previousSibling;
+											continue;
 										}
+										break;
 									}
+								}
+								if (prev){
+									range.setEndBefore(prev.nextSibling, 0);
+									range.collapse(false);
 								}
 							}
 							prevent = this._deleteLeft(range);
