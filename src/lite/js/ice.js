@@ -492,7 +492,9 @@
 							// Handling track change show/hide
 							//1stQuad check
 							if(!this.visible(range.endContainer) && range.endContainer.parentNode){
-								if(range.endContainer.parentNode.nextSibling){
+                                if (range.endContainer.nextSibling) {
+                                    range.setEndBefore(range.endContainer.nextSibling);
+                                } else if(range.endContainer.parentNode.nextSibling){
 			//						range.setEnd(range.endContainer.parentNode.nextSibling, 0);
 									range.setEndBefore(range.endContainer.parentNode.nextSibling);
 								} else {
