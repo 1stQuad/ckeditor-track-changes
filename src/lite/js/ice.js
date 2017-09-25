@@ -551,8 +551,10 @@
 									}
 								}
 								if (prev){
-									range.setEnd(prev, 0);
-									range.moveEnd(ice.dom.CHARACTER_UNIT, ice.dom.getNodeCharacterLength(range.endContainer));
+                                    if ($(prev).is(this._iceSelector)){
+                                        prev = range.getLastSelectableChild(prev) 
+                                    }
+                                    range.setEnd(prev, ice.dom.getNodeCharacterLength(prev));
 									range.collapse(false);
 								}
 							}
