@@ -536,9 +536,30 @@
 					else {
 						// LEFT DELETE
 						var prev;
-						if(browser.mozilla){
-							prevent = this._deleteLeft(range);
+                        var removeEmptyParagrapn = function (curRange, ice) {
+                            var paragraph = (!isNewlineNode(curRange.startContainer)) ? $(curRange.startContainer).closest("p") : $(curRange.startContainer);
+                            if (paragraph.length){
+                                var nodeList = Array.prototype.slice.call(paragraph[0].childNodes);
+                                var brNodes = [], isEmpty = false;
+                                isEmpty = nodeList.every(function (el, ind, arr) {
+                                    var isDelNode = $(el).is(ice._deleteSelector);
+                                    var isBrNode = isBRNode(el);
+                                    var isLastChild = ind === arr.length - 1;
+                                    var isEmpty = !isDelNode && !isBrNode  && !el.textContent;
+                                    if(isBrNode) brNodes.push(el);
+                                    return isDelNode || isBrNode && isLastChild || isBrNode && ind === 0 || isEmpty;
+                                });
+                                if (isEmpty){
+                                    brNodes.every(function (el) {
+                                        ice._removeNode(el);
+                                    })
+                                }
+                            }
+                        };
+                        if(browser.mozilla){
+                            prevent = this._deleteLeft(range);
 							// Handling track change show/hide
+							removeEmptyParagrapn(range, this);
 							if(!this.visible(range.startContainer)){
 								prev = (range.startContainer.nodeType === ice.dom.TEXT_NODE) ? range.startContainer.parentNode.previousSibling : range.startContainer.previousSibling;
 								if ($(prev).is(this._deleteSelector)) {
@@ -576,6 +597,7 @@
 									range.collapse(false);
 								}
 							}
+							removeEmptyParagrapn(range, this);
 							prevent = this._deleteLeft(range);
 						}
 					}
