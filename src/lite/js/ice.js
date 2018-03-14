@@ -481,7 +481,7 @@
 				else {
 					this._cleanupSelection(range, false, true);
 					// if we're inside a current insert range, let the editor take care of the deletion
-					if (this._isCurrentUserIceNode(this._getIceNode(range.startContainer, INSERT_TYPE))) {
+					if (this._isCurrentUserIceNode(this._getIceNode(range.startContainer, INSERT_TYPE)) && range.startContainer === ice.dom.TEXT_NODE) {
 						return false;
 					}
 
@@ -550,6 +550,7 @@
                                     return isDelNode || isBrNode && isLastChild || isBrNode && ind === 0 || isEmpty;
                                 });
                                 if (isEmpty){
+                                    paragraph.prev().attr('id', 'ie-range-mark');
                                     brNodes.every(function (el) {
                                         ice._removeNode(el);
                                     })
@@ -602,9 +603,18 @@
 						}
 					}
 				}
-		
-				range && this.selection.addRange(range);
-			}
+
+                var mark = this.editor.document.getById("ie-range-mark");
+				if (mark){
+                    if (browser.mozilla){
+                        var newEmptyText = new CKEDITOR.dom.text(" ");
+                        ice.dom.removeBRFromChild(mark.$);
+                        newEmptyText.appendTo(mark);
+                    }
+                    mark.removeAttribute('id');
+                }
+                range && this.selection.addRange(range);
+            }
 			finally {
 				this._endBatchChange(changeid, prevent);
 			}
@@ -1781,6 +1791,12 @@
 			// If the current block is empty, then let the browser handle the key/event.
 			if (isEmptyBlock) {
 				return false;
+			} else {
+            	if (parentBlock){
+                    if (ice.dom.isEmptyString($(parentBlock).children(":visible").text())){
+                        return false;
+					}
+				}
 			}
 
 			if (isBRNode(commonAncestor)) {

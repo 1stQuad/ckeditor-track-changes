@@ -1122,6 +1122,7 @@ Written by (David *)Frenkiel - https://github.com/imdfl
 				return;
 			}
 			var iceprops = {
+				editor:e, 
 				element: body,
 				mergeBlocks : false,
 				currentUser: {
